@@ -33,6 +33,7 @@ services:
       SHADOW_DATABASE_URL: mysql://${MYSQL_USER:-nexus_support}:${MYSQL_PASSWORD:-nexus_support_pass}@nexus-support-mysql:3306/${MYSQL_DATABASE:-nexus-support}_shadow
       SESSION_SECRET: ${SESSION_SECRET:-replace-with-a-long-random-string}
       AES_SECRET: ${AES_SECRET:-replace-with-another-random-string}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
       ADMIN_ACCOUNT: ${ADMIN_ACCOUNT:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123456}
       ADMIN_NICKNAME: ${ADMIN_NICKNAME:-超级管理员}
@@ -40,7 +41,7 @@ services:
       - com.centurylinklabs.watchtower.enable=true
     command: sh -c "npx prisma migrate deploy && npm run start"
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3000}:3000"
 
   watchtower:
     image: containrrr/watchtower:latest

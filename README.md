@@ -28,12 +28,13 @@ chmod +x deploy.sh
 1. 检查 Docker / Docker Compose
 2. 检查是否已安装（`/root/nexus-support` 目录）
 3. 要求输入管理员账号、密码、昵称
-4. 自动生成 `SESSION_SECRET` 和 `AES_SECRET`
-5. 启动容器：
+4. 可自定义公网映射端口（直接回车默认 `3000`）
+5. 自动生成 `SESSION_SECRET` 和 `AES_SECRET`
+6. 启动容器：
    - `nexus-support-mysql`
    - `nexus-support-app`
    - `nexus-support-watchtower`
-6. 输出登录地址
+7. 输出登录地址
 
 同时会把你输入的管理员账号/密码/昵称和生成的密钥直接写入 `docker-compose.yml`（并备份为 `docker-compose.yml.bak`），避免后续手动执行 `docker compose pull && docker compose up -d` 时回落到默认账号密码。
 
@@ -47,11 +48,11 @@ chmod +x deploy.sh
 
 ## 登录入口
 
-部署完成后可访问：
+部署完成后可访问（端口为你部署时输入的端口，默认 `3000`）：
 
-- 用户：`http://<服务器IP>:3000/login`
-- 客服：`http://<服务器IP>:3000/login/agent`
-- 管理员：`http://<服务器IP>:3000/login/admin`
+- 用户：`http://<服务器IP>:<端口>/login`
+- 客服：`http://<服务器IP>:<端口>/login/agent`
+- 管理员：`http://<服务器IP>:<端口>/login/admin`
 
 ## 升级方式
 

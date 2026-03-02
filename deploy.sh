@@ -111,6 +111,22 @@ done
 read -r -p "[INPUT] 管理员昵称 [${DEFAULT_ADMIN_NICKNAME}]: " ADMIN_NICKNAME_INPUT
 ADMIN_NICKNAME_VALUE="${ADMIN_NICKNAME_INPUT:-$DEFAULT_ADMIN_NICKNAME}"
 
+DEFAULT_APP_PORT="${APP_PORT:-$(read_dotenv_value "APP_PORT")}"
+if [ -z "$DEFAULT_APP_PORT" ]; then
+  DEFAULT_APP_PORT="3000"
+fi
+
+while true; do
+  read -r -p "[INPUT] 公网映射端口 [${DEFAULT_APP_PORT}]: " APP_PORT_INPUT
+  APP_PORT_VALUE="${APP_PORT_INPUT:-$DEFAULT_APP_PORT}"
+
+  if [[ "$APP_PORT_VALUE" =~ ^[0-9]+$ ]] && [ "$APP_PORT_VALUE" -ge 1 ] && [ "$APP_PORT_VALUE" -le 65535 ]; then
+    break
+  fi
+
+  echo "[WARN] 端口不合法，请输入 1-65535 的数字。"
+done
+
 SESSION_SECRET_VALUE="$(generate_secret 64)"
 AES_SECRET_VALUE="$(generate_secret 64)"
 
@@ -129,6 +145,7 @@ replace_placeholder_in_compose "$COMPOSE_FILE" '\${MYSQL_DATABASE:-nexus-support
 replace_placeholder_in_compose "$COMPOSE_FILE" '\${MYSQL_USER:-nexus_support}' "$MYSQL_USER_VALUE"
 replace_placeholder_in_compose "$COMPOSE_FILE" '\${MYSQL_PASSWORD:-nexus_support_pass}' "$MYSQL_PASSWORD_VALUE"
 replace_placeholder_in_compose "$COMPOSE_FILE" '\${MYSQL_DATA_DIR:-/root/nexus-support/mysql}' "$MYSQL_DATA_DIR"
+replace_placeholder_in_compose "$COMPOSE_FILE" '\${APP_PORT:-3000}' "$APP_PORT_VALUE"
 replace_placeholder_in_compose "$COMPOSE_FILE" '\${APP_IMAGE:-arxuan123/nexus-support:latest}' "$APP_IMAGE_VALUE"
 replace_placeholder_in_compose "$COMPOSE_FILE" '\${SESSION_SECRET:-replace-with-a-long-random-string}' "$SESSION_SECRET_VALUE"
 replace_placeholder_in_compose "$COMPOSE_FILE" '\${AES_SECRET:-replace-with-another-random-string}' "$AES_SECRET_VALUE"
@@ -159,6 +176,6 @@ echo "SESSION_SECRET=${SESSION_SECRET_VALUE}"
 echo "AES_SECRET=${AES_SECRET_VALUE}"
 echo
 echo "[DONE] 部署完成。登录地址如下："
-echo "用户登录：http://${HOST_IP}:3000/login"
-echo "客服登录：http://${HOST_IP}:3000/login/agent"
-echo "管理员登录：http://${HOST_IP}:3000/login/admin"
+echo "用户登录：http://${HOST_IP}:${APP_PORT_VALUE}/login"
+echo "客服登录：http://${HOST_IP}:${APP_PORT_VALUE}/login/agent"
+echo "管理员登录：http://${HOST_IP}:${APP_PORT_VALUE}/login/admin"
