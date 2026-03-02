@@ -35,6 +35,8 @@ chmod +x deploy.sh
    - `nexus-support-watchtower`
 6. 输出登录地址
 
+同时会把你输入的管理员账号/密码/昵称和生成的密钥直接写入 `docker-compose.yml`（并备份为 `docker-compose.yml.bak`），避免后续手动执行 `docker compose pull && docker compose up -d` 时回落到默认账号密码。
+
 ## 默认镜像
 
 部署脚本已固定使用以下镜像：

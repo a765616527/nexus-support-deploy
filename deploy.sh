@@ -18,6 +18,19 @@ read_dotenv_value() {
   printf "%s" "$line"
 }
 
+sed_escape_replacement() {
+  printf "%s" "$1" | sed -e 's/[&|\\]/\\&/g'
+}
+
+replace_placeholder_in_compose() {
+  local compose_file="$1"
+  local placeholder="$2"
+  local value="$3"
+  local escaped
+  escaped="$(sed_escape_replacement "$value")"
+  sed -i "s|${placeholder}|${escaped}|g" "$compose_file"
+}
+
 generate_secret() {
   local length="${1:-64}"
 
@@ -67,6 +80,11 @@ echo "[INFO] 系统根目录：$DEPLOY_ROOT_DIR"
 echo "[INFO] MySQL 数据目录：$MYSQL_DATA_DIR"
 
 APP_IMAGE_VALUE="arxuan123/nexus-support:latest"
+MYSQL_ROOT_PASSWORD_VALUE="${MYSQL_ROOT_PASSWORD:-root123456}"
+MYSQL_DATABASE_VALUE="${MYSQL_DATABASE:-nexus-support}"
+MYSQL_USER_VALUE="${MYSQL_USER:-nexus_support}"
+MYSQL_PASSWORD_VALUE="${MYSQL_PASSWORD:-nexus_support_pass}"
+SESSION_COOKIE_SECURE_VALUE="${SESSION_COOKIE_SECURE:-false}"
 
 DEFAULT_ADMIN_ACCOUNT="${ADMIN_ACCOUNT:-$(read_dotenv_value "ADMIN_ACCOUNT")}"
 DEFAULT_ADMIN_NICKNAME="${ADMIN_NICKNAME:-$(read_dotenv_value "ADMIN_NICKNAME")}"
@@ -98,29 +116,36 @@ AES_SECRET_VALUE="$(generate_secret 64)"
 
 echo "[INFO] 已生成 SESSION_SECRET 和 AES_SECRET。"
 
+COMPOSE_FILE="$PROJECT_DIR/docker-compose.yml"
+if [ ! -f "$COMPOSE_FILE" ]; then
+  echo "[ERROR] 未找到 $COMPOSE_FILE"
+  exit 1
+fi
+
+cp "$COMPOSE_FILE" "${COMPOSE_FILE}.bak"
+
+replace_placeholder_in_compose "$COMPOSE_FILE" '\${MYSQL_ROOT_PASSWORD:-root123456}' "$MYSQL_ROOT_PASSWORD_VALUE"
+replace_placeholder_in_compose "$COMPOSE_FILE" '\${MYSQL_DATABASE:-nexus-support}' "$MYSQL_DATABASE_VALUE"
+replace_placeholder_in_compose "$COMPOSE_FILE" '\${MYSQL_USER:-nexus_support}' "$MYSQL_USER_VALUE"
+replace_placeholder_in_compose "$COMPOSE_FILE" '\${MYSQL_PASSWORD:-nexus_support_pass}' "$MYSQL_PASSWORD_VALUE"
+replace_placeholder_in_compose "$COMPOSE_FILE" '\${MYSQL_DATA_DIR:-/root/nexus-support/mysql}' "$MYSQL_DATA_DIR"
+replace_placeholder_in_compose "$COMPOSE_FILE" '\${APP_IMAGE:-arxuan123/nexus-support:latest}' "$APP_IMAGE_VALUE"
+replace_placeholder_in_compose "$COMPOSE_FILE" '\${SESSION_SECRET:-replace-with-a-long-random-string}' "$SESSION_SECRET_VALUE"
+replace_placeholder_in_compose "$COMPOSE_FILE" '\${AES_SECRET:-replace-with-another-random-string}' "$AES_SECRET_VALUE"
+replace_placeholder_in_compose "$COMPOSE_FILE" '\${SESSION_COOKIE_SECURE:-false}' "$SESSION_COOKIE_SECURE_VALUE"
+replace_placeholder_in_compose "$COMPOSE_FILE" '\${ADMIN_ACCOUNT:-admin}' "$ADMIN_ACCOUNT_VALUE"
+replace_placeholder_in_compose "$COMPOSE_FILE" '\${ADMIN_PASSWORD:-admin123456}' "$ADMIN_PASSWORD_VALUE"
+replace_placeholder_in_compose "$COMPOSE_FILE" '\${ADMIN_NICKNAME:-超级管理员}' "$ADMIN_NICKNAME_VALUE"
+
+echo "[INFO] 已写入 docker-compose.yml（原文件备份为 docker-compose.yml.bak）"
+
 echo "[INFO] 拉取镜像..."
-MYSQL_DATA_DIR="$MYSQL_DATA_DIR" \
-APP_IMAGE="$APP_IMAGE_VALUE" \
-ADMIN_ACCOUNT="$ADMIN_ACCOUNT_VALUE" \
-ADMIN_PASSWORD="$ADMIN_PASSWORD_VALUE" \
-ADMIN_NICKNAME="$ADMIN_NICKNAME_VALUE" \
-SESSION_SECRET="$SESSION_SECRET_VALUE" \
-AES_SECRET="$AES_SECRET_VALUE" \
 "${COMPOSE_CMD[@]}" pull
 
 echo "[INFO] 启动服务..."
-MYSQL_DATA_DIR="$MYSQL_DATA_DIR" \
-APP_IMAGE="$APP_IMAGE_VALUE" \
-ADMIN_ACCOUNT="$ADMIN_ACCOUNT_VALUE" \
-ADMIN_PASSWORD="$ADMIN_PASSWORD_VALUE" \
-ADMIN_NICKNAME="$ADMIN_NICKNAME_VALUE" \
-SESSION_SECRET="$SESSION_SECRET_VALUE" \
-AES_SECRET="$AES_SECRET_VALUE" \
 "${COMPOSE_CMD[@]}" up -d
 
 echo "[INFO] 当前容器状态："
-MYSQL_DATA_DIR="$MYSQL_DATA_DIR" \
-APP_IMAGE="$APP_IMAGE_VALUE" \
 "${COMPOSE_CMD[@]}" ps
 
 HOST_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
