@@ -17,7 +17,7 @@
 ## 一键部署
 
 ```bash
-git clone git@github.com:a765616527/nexus-support-deploy.git
+git clone https://github.com/a765616527/nexus-support-deploy.git
 cd nexus-support-deploy
 chmod +x deploy.sh
 ./deploy.sh
@@ -75,4 +75,3 @@ docker compose down
 ```bash
 rm -rf /root/nexus-support
 ```
-
